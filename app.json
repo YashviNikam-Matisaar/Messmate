@@ -4,10 +4,10 @@
     "slug": "messmate",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/kaku-placeholder.png",
+    "icon": "./assets/splash-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/kaku-placeholder.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5F0EB"
     },
@@ -15,7 +15,7 @@
     "android": {
       "package": "com.messmate.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/kaku-placeholder.png",
+        "foregroundImage": "./assets/splash-icon.png",
         "backgroundColor": "#FF6B35"
       }
     },
