@@ -1,24 +1,24 @@
 {
   "expo": {
-    "name": "MM-Frontend",
-    "slug": "MM-Frontend",
+    "name": "MessMate",
+    "slug": "messmate",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/kaku-placeholder.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
+    "splash": {
+      "image": "./assets/kaku-placeholder.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F0EB"
     },
+    "assetBundlePatterns": ["**/*"],
     "android": {
+      "package": "com.messmate.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/kaku-placeholder.png",
+        "backgroundColor": "#FF6B35"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": ["expo-notifications"]
   }
 }
