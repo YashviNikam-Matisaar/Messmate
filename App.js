@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import SplashScreen from './screens/SplashScreen';
 import NameSetupScreen from './screens/NameSetupScreen';
 import BottomTabs from './navigation/BottomTabs';
 import { getSavedName, getSavedUserId } from './utils/storage';
-import { registerPushToken } from './services/api';
-
-// Foreground notifications still show a banner/alert
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import { scheduleAllDailyReminders } from './utils/notifications';
 
 // App states: 'splash' -> 'nameSetup' or 'main'
 export default function App() {
@@ -27,13 +17,13 @@ export default function App() {
       const savedName = await getSavedName();
       const savedUserId = await getSavedUserId();
 
-      // Splash shows for a moment regardless, matches SplashScreen's animation
+      // Splash shows for a moment regardless
       setTimeout(async () => {
         if (savedName && savedUserId) {
           setCurrentUserName(savedName);
           setCurrentUserId(savedUserId);
           setScreen('main');
-          registerForPushNotifications(savedUserId);
+          scheduleAllDailyReminders();
         } else {
           setScreen('nameSetup');
         }
@@ -42,23 +32,11 @@ export default function App() {
     bootstrap();
   }, []);
 
-  const registerForPushNotifications = async (userId) => {
-    try {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') return;
-
-      const tokenData = await Notifications.getExpoPushTokenAsync();
-      await registerPushToken({ user_id: userId, token: tokenData.data });
-    } catch (err) {
-      console.error('Push registration failed:', err.message);
-    }
-  };
-
   const handleNameSetupComplete = (name, id) => {
     setCurrentUserName(name);
     setCurrentUserId(id);
     setScreen('main');
-    registerForPushNotifications(id);
+    scheduleAllDailyReminders();
   };
 
   if (screen === 'splash') {
@@ -74,4 +52,5 @@ export default function App() {
       <BottomTabs currentUserName={currentUserName} currentUserId={currentUserId} />
     </NavigationContainer>
   );
+
 }
