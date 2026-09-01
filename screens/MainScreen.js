@@ -178,7 +178,7 @@ export default function MainScreen({ currentUserName, currentUserId }) {
         </View>
 
         <Text style={styles.policyText}>
-          Data auto-deletes after 7 days.
+          Data auto-deletes at the end of each month.
         </Text>
       </View>
     </View>
