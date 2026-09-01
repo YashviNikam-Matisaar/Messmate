@@ -2,9 +2,11 @@
 // Change API_BASE_URL to your deployed backend URL when you go live —
 // right now it's set for local testing on your machine.
 
+// All backend calls live here so screens never call fetch() directly.
+
 import { API_BASE_URL } from '@env';
 
-const BASE = API_BASE_URL || 'http://localhost:5000';
+const BASE = API_BASE_URL || 'https://mess-mate-xxfr.onrender.com';
 
 async function handleResponse(res) {
   const data = await res.json();
@@ -40,14 +42,5 @@ export async function savePreference({ user_id, date, meal_type, quantity }) {
 
 export async function getMessages() {
   const res = await fetch(`${BASE}/api/messages`);
-  return handleResponse(res);
-}
-
-export async function registerPushToken({ user_id, token }) {
-  const res = await fetch(`${BASE}/api/push-tokens`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id, token }),
-  });
   return handleResponse(res);
 }
