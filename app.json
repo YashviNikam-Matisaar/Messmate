@@ -10,7 +10,7 @@
     "android": {
       "package": "com.messmate.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/splash-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#FF6B35"
       }
     },
