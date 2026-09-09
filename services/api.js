@@ -1,9 +1,3 @@
-// All backend calls live here so screens never call fetch() directly.
-// Change API_BASE_URL to your deployed backend URL when you go live —
-// right now it's set for local testing on your machine.
-
-// All backend calls live here so screens never call fetch() directly.
-
 import { API_BASE_URL } from '@env';
 
 const BASE = API_BASE_URL || 'https://mess-mate-xxfr.onrender.com';
@@ -42,5 +36,14 @@ export async function savePreference({ user_id, date, meal_type, quantity }) {
 
 export async function getMessages() {
   const res = await fetch(`${BASE}/api/messages`);
+  return handleResponse(res);
+}
+
+export async function setLeaveStatus(userId, onLeave) {
+  const res = await fetch(`${BASE}/api/users/${userId}/leave-status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ on_leave: onLeave }),
+  });
   return handleResponse(res);
 }

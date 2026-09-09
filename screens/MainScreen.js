@@ -11,11 +11,11 @@ import {
 import UserRow from '../components/UserRow';
 import StatusBadge from '../components/StatusBadge';
 import SaveButton from '../components/SaveButton';
-import { getAllPreferences, savePreference } from '../services/api';
+import { getAllPreferences, savePreference, setLeaveStatus } from '../services/api';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-export default function MainScreen({ currentUserName, currentUserId }) {
+export default function MainScreen({ currentUserName, currentUserId, isAdmin }) {
   const [date] = useState(today());
   const [preferences, setPreferences] = useState([]);
   const [status, setStatus] = useState({ lunch: 'CLOSED', dinner: 'CLOSED' });
@@ -25,9 +25,9 @@ export default function MainScreen({ currentUserName, currentUserId }) {
   const [savingLunch, setSavingLunch] = useState(false);
   const [savingDinner, setSavingDinner] = useState(false);
 
-  // local edits for the CURRENT user's own row, before Save is tapped
-  const [myLunch, setMyLunch] = useState(0);
-  const [myDinner, setMyDinner] = useState(0);
+  const [selectedUserId, setSelectedUserId] = useState(currentUserId);
+  const [selectedLunch, setSelectedLunch] = useState(0);
+  const [selectedDinner, setSelectedDinner] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
@@ -36,10 +36,11 @@ export default function MainScreen({ currentUserName, currentUserId }) {
       setStatus(data.status);
       setTotals(data.totals);
 
-      const mine = data.preferences.find((p) => p.user_id === currentUserId);
-      if (mine) {
-        setMyLunch(mine.lunch);
-        setMyDinner(mine.dinner);
+      const activeId = selectedUserId || currentUserId;
+      const active = data.preferences.find((p) => p.user_id === activeId);
+      if (active) {
+        setSelectedLunch(active.lunch);
+        setSelectedDinner(active.dinner);
       }
     } catch (err) {
       Alert.alert('Error', 'Could not load data: ' + err.message);
@@ -47,11 +48,10 @@ export default function MainScreen({ currentUserName, currentUserId }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [date, currentUserId]);
+  }, [date, currentUserId, selectedUserId]);
 
   useEffect(() => {
     loadData();
-    // Auto-refresh every 60s so everyone sees everyone else's updates
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
   }, [loadData]);
@@ -61,14 +61,33 @@ export default function MainScreen({ currentUserName, currentUserId }) {
     loadData();
   };
 
+  const handleSelectRow = (userId) => {
+    if (!isAdmin) return;
+    setSelectedUserId(userId);
+    const row = preferences.find((p) => p.user_id === userId);
+    if (row) {
+      setSelectedLunch(row.lunch);
+      setSelectedDinner(row.dinner);
+    }
+  };
+
+  const handleToggleLeave = async (userId, onLeaveValue) => {
+    try {
+      await setLeaveStatus(userId, onLeaveValue);
+      await loadData();
+    } catch (err) {
+      Alert.alert('Could not update leave status', err.message);
+    }
+  };
+
   const handleSaveLunch = async () => {
     setSavingLunch(true);
     try {
       await savePreference({
-        user_id: currentUserId,
+        user_id: selectedUserId || currentUserId,
         date,
         meal_type: 'lunch',
-        quantity: myLunch,
+        quantity: selectedLunch,
       });
       await loadData();
     } catch (err) {
@@ -82,10 +101,10 @@ export default function MainScreen({ currentUserName, currentUserId }) {
     setSavingDinner(true);
     try {
       await savePreference({
-        user_id: currentUserId,
+        user_id: selectedUserId || currentUserId,
         date,
         meal_type: 'dinner',
-        quantity: myDinner,
+        quantity: selectedDinner,
       });
       await loadData();
     } catch (err) {
@@ -102,6 +121,11 @@ export default function MainScreen({ currentUserName, currentUserId }) {
       </View>
     );
   }
+
+  const activeId = selectedUserId || currentUserId;
+  const activeRow = preferences.find((p) => p.user_id === activeId);
+  const activeName = activeRow?.name || currentUserName;
+  const activeIsLocked = !!activeRow?.on_leave;
 
   return (
     <View style={styles.container}>
@@ -120,6 +144,13 @@ export default function MainScreen({ currentUserName, currentUserId }) {
             <StatusBadge status={status.dinner} />
           </View>
         </View>
+        {isAdmin && (
+          <Text style={styles.adminHint}>
+            Admin — editing: {activeName}
+            {activeId === currentUserId ? ' (you)' : ''}
+            {activeIsLocked ? ' — on leave, locked' : ''}
+          </Text>
+        )}
       </View>
 
       <View style={styles.tableHeader}>
@@ -136,16 +167,24 @@ export default function MainScreen({ currentUserName, currentUserId }) {
         }
         renderItem={({ item }) => {
           const isMe = item.user_id === currentUserId;
+          const isActive = item.user_id === activeId;
+          const canEdit = (isMe || (isAdmin && isActive)) && !item.on_leave;
+
           return (
             <UserRow
               name={item.name}
-              lunch={isMe ? myLunch : item.lunch}
-              dinner={isMe ? myDinner : item.dinner}
-              onLunchChange={setMyLunch}
-              onDinnerChange={setMyDinner}
+              lunch={isActive ? selectedLunch : item.lunch}
+              dinner={isActive ? selectedDinner : item.dinner}
+              onLunchChange={setSelectedLunch}
+              onDinnerChange={setSelectedDinner}
               lunchDisabled={status.lunch === 'CLOSED'}
               dinnerDisabled={status.dinner === 'CLOSED'}
-              isCurrentUser={isMe}
+              isCurrentUser={canEdit}
+              isSelected={isActive && isAdmin}
+              onPress={isAdmin ? () => handleSelectRow(item.user_id) : undefined}
+              onLeave={item.on_leave}
+              isAdmin={isAdmin}
+              onToggleLeave={(val) => handleToggleLeave(item.user_id, val)}
             />
           );
         }}
@@ -161,17 +200,17 @@ export default function MainScreen({ currentUserName, currentUserId }) {
         <View style={styles.saveRow}>
           <View style={styles.saveButtonWrap}>
             <SaveButton
-              label="Save Lunch"
+              label={`Save Lunch${isAdmin ? ` (${activeName})` : ''}`}
               onPress={handleSaveLunch}
-              disabled={status.lunch === 'CLOSED'}
+              disabled={status.lunch === 'CLOSED' || activeIsLocked}
               saving={savingLunch}
             />
           </View>
           <View style={styles.saveButtonWrap}>
             <SaveButton
-              label="Save Dinner"
+              label={`Save Dinner${isAdmin ? ` (${activeName})` : ''}`}
               onPress={handleSaveDinner}
-              disabled={status.dinner === 'CLOSED'}
+              disabled={status.dinner === 'CLOSED' || activeIsLocked}
               saving={savingDinner}
             />
           </View>
@@ -186,45 +225,15 @@ export default function MainScreen({ currentUserName, currentUserId }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F0EB',
-  },
-  center: {
-    flex: 1,
-    backgroundColor: '#F5F0EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  header: {
-    padding: 16,
-    backgroundColor: '#FF6B35',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  cutoffInfo: {
-    fontSize: 12,
-    color: '#FFE8DC',
-    marginTop: 4,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    marginTop: 10,
-    gap: 16,
-  },
-  badgeGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  badgeLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#F5F0EB' },
+  center: { flex: 1, backgroundColor: '#F5F0EB', alignItems: 'center', justifyContent: 'center' },
+  header: { padding: 16, backgroundColor: '#FF6B35' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  cutoffInfo: { fontSize: 12, color: '#FFE8DC', marginTop: 4 },
+  badgeRow: { flexDirection: 'row', marginTop: 10, gap: 16 },
+  badgeGroup: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  badgeLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  adminHint: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 8, fontStyle: 'italic' },
   tableHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -232,39 +241,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#FFD9C2',
   },
-  tableHeaderText: {
-    fontWeight: '700',
-    color: '#2D1B12',
-    fontSize: 13,
-    width: 90,
-    textAlign: 'center',
-  },
-  footer: {
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E8DFD3',
-    backgroundColor: '#fff',
-  },
-  totalsRow: {
-    marginBottom: 8,
-  },
-  totalsText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2D1B12',
-    textAlign: 'center',
-  },
-  saveRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  saveButtonWrap: {
-    flex: 1,
-  },
-  policyText: {
-    fontSize: 11,
-    color: '#9C8F80',
-    textAlign: 'center',
-    marginTop: 8,
-  },
+  tableHeaderText: { fontWeight: '700', color: '#2D1B12', fontSize: 13, width: 90, textAlign: 'center' },
+  footer: { padding: 12, borderTopWidth: 1, borderTopColor: '#E8DFD3', backgroundColor: '#fff' },
+  totalsRow: { marginBottom: 8 },
+  totalsText: { fontSize: 14, fontWeight: '700', color: '#2D1B12', textAlign: 'center' },
+  saveRow: { flexDirection: 'row', gap: 10 },
+  saveButtonWrap: { flex: 1 },
+  policyText: { fontSize: 11, color: '#9C8F80', textAlign: 'center', marginTop: 8 },
 });

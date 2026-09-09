@@ -1,10 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import QuantityControl from './QuantityControl';
 
-// One row: name + lunch control + dinner control.
-// The row itself doesn't know about saving — MainScreen owns that logic
-// and passes down onLunchChange/onDinnerChange as local-state setters.
 export default function UserRow({
   name,
   lunch,
@@ -14,23 +11,52 @@ export default function UserRow({
   lunchDisabled,
   dinnerDisabled,
   isCurrentUser,
+  isSelected,
+  onPress,
+  onLeave,
+  isAdmin,
+  onToggleLeave,
 }) {
+  const Wrapper = onPress ? TouchableOpacity : View;
+  const locked = onLeave;
+
   return (
-    <View style={[styles.row, isCurrentUser && styles.currentUserRow]}>
-      <Text style={styles.name} numberOfLines={1}>
-        {name}
-      </Text>
+    <Wrapper
+      style={[
+        styles.row,
+        isCurrentUser && styles.currentUserRow,
+        isSelected && styles.selectedRow,
+        locked && styles.leaveRow,
+      ]}
+      onPress={locked ? undefined : onPress}
+      activeOpacity={onPress ? 0.6 : 1}
+    >
+      <View style={styles.nameCol}>
+        <Text style={[styles.name, locked && styles.nameLocked]} numberOfLines={1}>
+          {name}
+        </Text>
+        {isAdmin && (
+          <View style={styles.leaveRowInline}>
+            <Text style={styles.leaveLabel}>On leave</Text>
+            <Switch
+              value={!!onLeave}
+              onValueChange={(val) => onToggleLeave?.(val)}
+              trackColor={{ false: '#E8DFD3', true: '#FF6B35' }}
+            />
+          </View>
+        )}
+      </View>
       <QuantityControl
         value={lunch}
         onChange={onLunchChange}
-        disabled={lunchDisabled || !isCurrentUser}
+        disabled={locked || lunchDisabled || !isCurrentUser}
       />
       <QuantityControl
         value={dinner}
         onChange={onDinnerChange}
-        disabled={dinnerDisabled || !isCurrentUser}
+        disabled={locked || dinnerDisabled || !isCurrentUser}
       />
-    </View>
+    </Wrapper>
   );
 }
 
@@ -47,11 +73,36 @@ const styles = StyleSheet.create({
   currentUserRow: {
     backgroundColor: '#FFF3EC',
   },
-  name: {
+  selectedRow: {
+    backgroundColor: '#FFD9C2',
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+  },
+  leaveRow: {
+    backgroundColor: '#F0F0F0',
+    opacity: 0.7,
+  },
+  nameCol: {
     flex: 1,
+    marginRight: 8,
+  },
+  name: {
     fontSize: 15,
     fontWeight: '500',
     color: '#2D1B12',
-    marginRight: 8,
+  },
+  nameLocked: {
+    color: '#9C8F80',
+    fontStyle: 'italic',
+  },
+  leaveRowInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  leaveLabel: {
+    fontSize: 11,
+    color: '#9C8F80',
   },
 });
