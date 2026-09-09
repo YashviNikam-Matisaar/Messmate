@@ -9,10 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { getUsers } from '../services/api';
-import { saveName, saveUserId } from '../utils/storage';
+import { saveName, saveUserId, saveIsAdmin } from '../utils/storage';
 
-// Shown only on first launch. Validates the typed name against the
-// predefined list from the backend — doesn't let just anyone in.
 export default function NameSetupScreen({ onComplete }) {
   const [name, setName] = useState('');
   const [users, setUsers] = useState([]);
@@ -45,8 +43,9 @@ export default function NameSetupScreen({ onComplete }) {
     setSubmitting(true);
     await saveName(match.name);
     await saveUserId(match.id);
+    await saveIsAdmin(!!match.is_admin);
     setSubmitting(false);
-    onComplete(match.name, match.id);
+    onComplete(match.name, match.id, !!match.is_admin);
   };
 
   if (loading) {

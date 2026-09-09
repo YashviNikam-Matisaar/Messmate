@@ -6,10 +6,7 @@ import ChatScreen from '../screens/ChatScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Two tabs only: Main (the table) and Chat (read-only announcement feed).
-// currentUserName/currentUserId are passed down from App.js so MainScreen
-// knows which row belongs to "me" for editing permissions.
-export default function BottomTabs({ currentUserName, currentUserId }) {
+export default function BottomTabs({ currentUserName, currentUserId, isAdmin }) {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -25,7 +22,11 @@ export default function BottomTabs({ currentUserName, currentUserId }) {
         }}
       >
         {() => (
-          <MainScreen currentUserName={currentUserName} currentUserId={currentUserId} />
+          <MainScreen
+            currentUserName={currentUserName}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+          />
         )}
       </Tab.Screen>
       <Tab.Screen

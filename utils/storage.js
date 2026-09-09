@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const NAME_KEY = 'messmate_user_name';
 const USER_ID_KEY = 'messmate_user_id';
+const IS_ADMIN_KEY = 'messmate_is_admin';
 
 export async function getSavedName() {
   try {
@@ -34,5 +35,23 @@ export async function saveUserId(id) {
     await AsyncStorage.setItem(USER_ID_KEY, id);
   } catch (err) {
     console.error('Failed to save user id:', err);
+  }
+}
+
+export async function getSavedIsAdmin() {
+  try {
+    const value = await AsyncStorage.getItem(IS_ADMIN_KEY);
+    return value === 'true';
+  } catch (err) {
+    console.error('Failed to read admin flag:', err);
+    return false;
+  }
+}
+
+export async function saveIsAdmin(isAdmin) {
+  try {
+    await AsyncStorage.setItem(IS_ADMIN_KEY, isAdmin ? 'true' : 'false');
+  } catch (err) {
+    console.error('Failed to save admin flag:', err);
   }
 }
