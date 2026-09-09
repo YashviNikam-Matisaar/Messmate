@@ -71,12 +71,21 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
     }
   };
 
-  const handleToggleLeave = async (userId, onLeaveValue) => {
+  const handleToggleLunchLeave = async (userId, value) => {
     try {
-      await setLeaveStatus(userId, onLeaveValue);
+      await setLeaveStatus(userId, { lunch_leave: value });
       await loadData();
     } catch (err) {
-      Alert.alert('Could not update leave status', err.message);
+      Alert.alert('Could not update lunch leave status', err.message);
+    }
+  };
+
+  const handleToggleDinnerLeave = async (userId, value) => {
+    try {
+      await setLeaveStatus(userId, { dinner_leave: value });
+      await loadData();
+    } catch (err) {
+      Alert.alert('Could not update dinner leave status', err.message);
     }
   };
 
@@ -125,7 +134,8 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
   const activeId = selectedUserId || currentUserId;
   const activeRow = preferences.find((p) => p.user_id === activeId);
   const activeName = activeRow?.name || currentUserName;
-  const activeIsLocked = !!activeRow?.on_leave;
+  const activeLunchLocked = !!activeRow?.lunch_leave;
+  const activeDinnerLocked = !!activeRow?.dinner_leave;
 
   return (
     <View style={styles.container}>
@@ -148,7 +158,6 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
           <Text style={styles.adminHint}>
             Admin — editing: {activeName}
             {activeId === currentUserId ? ' (you)' : ''}
-            {activeIsLocked ? ' — on leave, locked' : ''}
           </Text>
         )}
       </View>
@@ -168,7 +177,7 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
         renderItem={({ item }) => {
           const isMe = item.user_id === currentUserId;
           const isActive = item.user_id === activeId;
-          const canEdit = (isMe || (isAdmin && isActive)) && !item.on_leave;
+          const canEdit = isMe || (isAdmin && isActive);
 
           return (
             <UserRow
@@ -182,9 +191,11 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
               isCurrentUser={canEdit}
               isSelected={isActive && isAdmin}
               onPress={isAdmin ? () => handleSelectRow(item.user_id) : undefined}
-              onLeave={item.on_leave}
+              lunchLeave={item.lunch_leave}
+              dinnerLeave={item.dinner_leave}
               isAdmin={isAdmin}
-              onToggleLeave={(val) => handleToggleLeave(item.user_id, val)}
+              onToggleLunchLeave={(val) => handleToggleLunchLeave(item.user_id, val)}
+              onToggleDinnerLeave={(val) => handleToggleDinnerLeave(item.user_id, val)}
             />
           );
         }}
@@ -202,7 +213,7 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
             <SaveButton
               label={`Save Lunch${isAdmin ? ` (${activeName})` : ''}`}
               onPress={handleSaveLunch}
-              disabled={status.lunch === 'CLOSED' || activeIsLocked}
+              disabled={status.lunch === 'CLOSED' || activeLunchLocked}
               saving={savingLunch}
             />
           </View>
@@ -210,7 +221,7 @@ export default function MainScreen({ currentUserName, currentUserId, isAdmin }) 
             <SaveButton
               label={`Save Dinner${isAdmin ? ` (${activeName})` : ''}`}
               onPress={handleSaveDinner}
-              disabled={status.dinner === 'CLOSED' || activeIsLocked}
+              disabled={status.dinner === 'CLOSED' || activeDinnerLocked}
               saving={savingDinner}
             />
           </View>

@@ -39,11 +39,16 @@ export async function getMessages() {
   return handleResponse(res);
 }
 
-export async function setLeaveStatus(userId, onLeave) {
+// Pass either or both flags — only the ones provided get updated.
+export async function setLeaveStatus(userId, { lunch_leave, dinner_leave }) {
+  const body = {};
+  if (typeof lunch_leave === 'boolean') body.lunch_leave = lunch_leave;
+  if (typeof dinner_leave === 'boolean') body.dinner_leave = dinner_leave;
+
   const res = await fetch(`${BASE}/api/users/${userId}/leave-status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ on_leave: onLeave }),
+    body: JSON.stringify(body),
   });
   return handleResponse(res);
 }

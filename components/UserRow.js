@@ -13,12 +13,13 @@ export default function UserRow({
   isCurrentUser,
   isSelected,
   onPress,
-  onLeave,
+  lunchLeave,
+  dinnerLeave,
   isAdmin,
-  onToggleLeave,
+  onToggleLunchLeave,
+  onToggleDinnerLeave,
 }) {
   const Wrapper = onPress ? TouchableOpacity : View;
-  const locked = onLeave;
 
   return (
     <Wrapper
@@ -26,36 +27,45 @@ export default function UserRow({
         styles.row,
         isCurrentUser && styles.currentUserRow,
         isSelected && styles.selectedRow,
-        locked && styles.leaveRow,
       ]}
-      onPress={locked ? undefined : onPress}
+      onPress={onPress}
       activeOpacity={onPress ? 0.6 : 1}
     >
-      <View style={styles.nameCol}>
-        <Text style={[styles.name, locked && styles.nameLocked]} numberOfLines={1}>
-          {name}
-        </Text>
+      <Text style={styles.name} numberOfLines={1}>
+        {name}
+      </Text>
+
+      <View style={styles.mealCol}>
         {isAdmin && (
-          <View style={styles.leaveRowInline}>
-            <Text style={styles.leaveLabel}>On leave</Text>
-            <Switch
-              value={!!onLeave}
-              onValueChange={(val) => onToggleLeave?.(val)}
-              trackColor={{ false: '#E8DFD3', true: '#FF6B35' }}
-            />
-          </View>
+          <Switch
+            value={!!lunchLeave}
+            onValueChange={(val) => onToggleLunchLeave?.(val)}
+            trackColor={{ false: '#E8DFD3', true: '#FF6B35' }}
+            style={styles.tinySwitch}
+          />
         )}
+        <QuantityControl
+          value={lunch}
+          onChange={onLunchChange}
+          disabled={lunchLeave || lunchDisabled || !isCurrentUser}
+        />
       </View>
-      <QuantityControl
-        value={lunch}
-        onChange={onLunchChange}
-        disabled={locked || lunchDisabled || !isCurrentUser}
-      />
-      <QuantityControl
-        value={dinner}
-        onChange={onDinnerChange}
-        disabled={locked || dinnerDisabled || !isCurrentUser}
-      />
+
+      <View style={styles.mealCol}>
+        {isAdmin && (
+          <Switch
+            value={!!dinnerLeave}
+            onValueChange={(val) => onToggleDinnerLeave?.(val)}
+            trackColor={{ false: '#E8DFD3', true: '#FF6B35' }}
+            style={styles.tinySwitch}
+          />
+        )}
+        <QuantityControl
+          value={dinner}
+          onChange={onDinnerChange}
+          disabled={dinnerLeave || dinnerDisabled || !isCurrentUser}
+        />
+      </View>
     </Wrapper>
   );
 }
@@ -78,31 +88,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF6B35',
   },
-  leaveRow: {
-    backgroundColor: '#F0F0F0',
-    opacity: 0.7,
-  },
-  nameCol: {
-    flex: 1,
-    marginRight: 8,
-  },
   name: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '500',
     color: '#2D1B12',
+    marginRight: 8,
   },
-  nameLocked: {
-    color: '#9C8F80',
-    fontStyle: 'italic',
-  },
-  leaveRowInline: {
-    flexDirection: 'row',
+  mealCol: {
     alignItems: 'center',
-    marginTop: 4,
-    gap: 6,
   },
-  leaveLabel: {
-    fontSize: 11,
-    color: '#9C8F80',
+  tinySwitch: {
+    transform: [{ scale: 0.7 }],
+    marginBottom: 2,
   },
-});
+}); 
