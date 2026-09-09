@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@env';
 
-const BASE = API_BASE_URL || 'https://mess-mate-xxfr.onrender.com';
+const BASE = API_BASE_URL;
 
 async function handleResponse(res) {
   const data = await res.json();
